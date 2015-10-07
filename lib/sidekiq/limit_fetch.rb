@@ -17,6 +17,8 @@ class Sidekiq::LimitFetch
   include Redis
   Sidekiq.options[:fetch] = self
 
+  NAP_IF_NO_WORK = (ENV['NAP_IF_NO_WORK'] || 0).to_s.to_i
+
   def self.bulk_requeue(*args)
     Sidekiq::BasicFetch.bulk_requeue *args
   end
@@ -28,7 +30,12 @@ class Sidekiq::LimitFetch
 
   def retrieve_work
     queue, message = fetch_message
-    UnitOfWork.new queue, message if message
+    work = UnitOfWork.new queue, message if message
+    if work == nil && NAP_IF_NO_WORK > 0
+      puts "Nothing to do, I take a nap.."
+      sleep NAP_IF_NO_WORK
+    end
+    work
   end
 
   private
