@@ -32,7 +32,7 @@ class Sidekiq::LimitFetch
     queue, message = fetch_message
     work = UnitOfWork.new queue, message if message
     if work == nil && NAP_IF_NO_WORK > 0
-      puts "Nothing to do, I take a nap.."
+      # puts "Nothing to do, I take a nap.."
       sleep NAP_IF_NO_WORK
     end
     work
