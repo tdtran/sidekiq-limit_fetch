@@ -16,6 +16,8 @@ module Sidekiq::LimitFetch
 
   extend self
 
+  SLEEP_IF_NO_WORK = (ENV['SLEEP_IF_NO_WORK'] || 15).to_s.to_i
+
   def new(_)
     self
   end
@@ -23,7 +25,15 @@ module Sidekiq::LimitFetch
   def retrieve_work
     queue, job = redis_brpop(Queues.acquire)
     Queues.release_except(queue)
-    UnitOfWork.new(queue, job) if job
+    if job
+      UnitOfWork.new(queue, job)
+    else
+      if SLEEP_IF_NO_WORK > 0
+        sleep SLEEP_IF_NO_WORK
+      end
+
+      nil
+    end
   end
 
   def bulk_requeue(*args)
